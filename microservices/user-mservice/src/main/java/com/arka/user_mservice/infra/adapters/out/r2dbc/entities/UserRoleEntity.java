@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter @Builder
-@Table("roles")
+@Table("user_roles")
 public class UserRoleEntity {
     @Column("user_id")
     private UUID userId;
