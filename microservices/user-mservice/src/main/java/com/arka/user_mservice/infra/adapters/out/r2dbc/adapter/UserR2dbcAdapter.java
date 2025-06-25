@@ -1,5 +1,6 @@
 package com.arka.user_mservice.infra.adapters.out.r2dbc.adapter;
 
+import com.arka.user_mservice.application.ports.out.AuthPersistencePort;
 import com.arka.user_mservice.application.ports.out.UserPersistencePort;
 import com.arka.user_mservice.domain.models.UserModel;
 import com.arka.user_mservice.infra.adapters.out.r2dbc.mapper.UserEntityMapper;
@@ -13,7 +14,9 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class UserR2dbcAdapter implements UserPersistencePort {
+public class UserR2dbcAdapter implements
+        UserPersistencePort,
+        AuthPersistencePort {
 
     private final UserR2dbcRepository userR2dbcRepository;
     private final UserEntityMapper userEntityMapper;
@@ -67,5 +70,12 @@ public class UserR2dbcAdapter implements UserPersistencePort {
     @Override
     public Mono<Boolean> existsByEmail(String email) {
         return userR2dbcRepository.existsByEmail(email);
+    }
+
+    // AuthPersistencePort
+    @Override
+    public Mono<UserModel> findUserByEmail(String email) {
+        return userR2dbcRepository.findByEmail(email)
+                .map(userEntityMapper::toModel);
     }
 }

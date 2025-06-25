@@ -24,7 +24,7 @@ public class UserController {
     private final IUserUseCases iUserUseCases;
     private final UserDtoMapper userDtoMapper;
 
-    @PostMapping
+    @PostMapping("/register")
     public Mono<ResponseEntity<UserResponse>> register(@Valid @RequestBody UserRequest request) {
         UserModel user = userDtoMapper.toModel(request);
         return iUserUseCases.register(user)

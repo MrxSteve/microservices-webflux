@@ -1,5 +1,6 @@
 package com.arka.user_mservice.infra.security.jwt;
 
+import com.arka.user_mservice.application.ports.out.TokenProviderPort;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,7 @@ import java.util.UUID;
 
 @Slf4j
 @Component
-public class JwtProvider {
+public class JwtProvider implements TokenProviderPort {
 
     private final SecretKey secretKey;
     private final long jwtExpirationMs;
@@ -29,6 +30,7 @@ public class JwtProvider {
         this.jwtRefreshExpirationMs = refreshExpirationMs;
     }
 
+    @Override
     public String generateAccessToken(UUID userId, String username) {
         return Jwts.builder()
                 .setSubject(userId.toString())
@@ -39,6 +41,7 @@ public class JwtProvider {
                 .compact();
     }
 
+    @Override
     public String generateRefreshToken(UUID userId) {
         return Jwts.builder()
                 .setSubject(userId.toString())
