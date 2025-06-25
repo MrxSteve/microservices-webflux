@@ -8,6 +8,7 @@ import com.arka.user_mservice.application.ports.out.UserRolePersistencePort;
 import com.arka.user_mservice.domain.exceptions.ResourceAlreadyExistsException;
 import com.arka.user_mservice.domain.exceptions.ResourceNotFoundException;
 import com.arka.user_mservice.domain.models.UserModel;
+import com.arka.user_mservice.domain.models.UserProfileModel;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -22,7 +23,7 @@ public class UserService implements IUserUseCases {
     private final UserPersistencePort userPersistencePort;
     private final RolePersistencePort rolePersistencePort;
     private final UserRolePersistencePort userRolePersistencePort;
-    //private final UserProfilePersistencePort userProfilePersistencePort;
+    private final UserProfilePersistencePort userProfilePersistencePort;
 
     @Override
     public Mono<UserModel> register(UserModel user) {
@@ -47,9 +48,23 @@ public class UserService implements IUserUseCases {
                                     userPersistencePort.save(user)
                                             .flatMap(savedUser ->
                                                     userRolePersistencePort.assignRoleToUser(savedUser.getId(), defaultRole.getId())
-                                                            .then(enrichUser(savedUser))
-                                            ));
-                });
+                                                            .then(
+                                                                    userProfilePersistencePort.save(UserProfileModel.builder()
+                                                                            .userId(savedUser.getId())
+                                                                            .fullName("")
+                                                                            .cellphone("")
+                                                                            .docType("")
+                                                                            .docNumber("")
+                                                                            .address("")
+                                                                            .country("")
+                                                                            .city("")
+                                                                            .build())
+                                                            )
+                                                            .thenReturn(savedUser)
+                                            )
+                            );
+                })
+                .flatMap(this::enrichUser);
     }
 
     @Override
@@ -148,23 +163,14 @@ public class UserService implements IUserUseCases {
                 .flatMap(this::enrichUser);
     }
 
-//    private Mono<UserModel> enrichUser(UserModel user) {
-//        return Mono.zip(
-//                userRolePersistencePort.getRolesByUserId(user.getId()).collectList(),
-//                userProfilePersistencePort.findByUserId(user.getId()).defaultIfEmpty(null)
-//        ).map(tuple -> {
-//            user.setRoles(new HashSet<>(tuple.getT1()));
-//            user.setProfile(tuple.getT2());
-//            return user;
-//        });
-//    }
-
     private Mono<UserModel> enrichUser(UserModel user) {
-        return userRolePersistencePort.getRolesByUserId(user.getId())
-                .collectList()
-                .map(roles -> {
-                    user.setRoles(new HashSet<>(roles));
-                    return user;
-                });
+        return Mono.zip(
+                userRolePersistencePort.getRolesByUserId(user.getId()).collectList(),
+                userProfilePersistencePort.findByUserId(user.getId()).switchIfEmpty(Mono.justOrEmpty(null))
+        ).map(tuple -> {
+            user.setRoles(new HashSet<>(tuple.getT1()));
+            user.setProfile(tuple.getT2());
+            return user;
+        });
     }
 }

@@ -11,14 +11,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class UserServiceConfig {
-    // TODO: Agregar UserProfilePersistencePort
     @Bean
     public UserService userService(
             UserPersistencePort userPersistencePort,
             RolePersistencePort rolePersistencePort,
-            UserRolePersistencePort userRolePersistencePort
+            UserRolePersistencePort userRolePersistencePort,
+            UserProfilePersistencePort userProfilePersistencePort
     ) {
-        return new UserService(userPersistencePort, rolePersistencePort, userRolePersistencePort);
+        return new UserService(userPersistencePort, rolePersistencePort, userRolePersistencePort, userProfilePersistencePort);
     }
 
     @Bean
