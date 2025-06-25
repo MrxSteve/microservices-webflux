@@ -44,6 +44,18 @@ services:
     networks:
       - tienda-net
 
+  redis:
+    image: redis:7.2
+    container_name: tienda-redis
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - vol_redis_tienda:/data
+    networks:
+      - tienda-net
+
 networks:
   tienda-net:
     driver: bridge
@@ -51,3 +63,4 @@ networks:
 volumes:
   vol_postgres_tienda:
   vol_mongo_tienda:
+  vol_redis_tienda:
