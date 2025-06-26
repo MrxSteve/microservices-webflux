@@ -7,4 +7,5 @@ import lombok.*;
 public class AuthTokens {
     private final String accessToken;
     private final String refreshToken;
+    private final String sessionId;
 }

@@ -1,0 +1,39 @@
+package com.arka.user_mservice.infra.adapters.out.redis.adapter;
+
+import com.arka.user_mservice.application.ports.out.RefreshTokenStoragePort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.UUID;
+
+@Component
+@RequiredArgsConstructor
+public class RedisRefreshTokenAdapter implements RefreshTokenStoragePort {
+
+    private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
+
+    private String getKey(UUID userId, String sessionId) {
+        return "refresh_token:" + userId + ":" + sessionId;
+    }
+
+    @Override
+    public Mono<Void> save(UUID userId, String sessionId, String refreshToken, Duration duration) {
+        return reactiveRedisTemplate
+                .opsForValue()
+                .set(getKey(userId, sessionId), refreshToken, duration)
+                .then();
+    }
+
+    @Override
+    public Mono<String> get(UUID userId, String sessionId) {
+        return reactiveRedisTemplate.opsForValue().get(getKey(userId, sessionId));
+    }
+
+    @Override
+    public Mono<Void> delete(UUID userId, String sessionId) {
+        return reactiveRedisTemplate.delete(getKey(userId, sessionId)).then();
+    }
+}

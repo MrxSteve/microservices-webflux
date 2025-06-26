@@ -42,20 +42,29 @@ public class JwtProvider implements TokenProviderPort {
     }
 
     @Override
-    public String generateRefreshToken(UUID userId) {
+    public String generateRefreshToken(UUID userId, String sessionId) {
         return Jwts.builder()
                 .setSubject(userId.toString())
+                .claim("sessionId", sessionId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtRefreshExpirationMs))
                 .signWith(secretKey)
                 .compact();
     }
 
+    @Override
+    public String getSessionIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
+        return claims.get("sessionId", String.class);
+    }
+
+    @Override
     public UUID getUserIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         return UUID.fromString(claims.getSubject());
     }
 
+    @Override
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
@@ -66,6 +75,7 @@ public class JwtProvider implements TokenProviderPort {
         }
     }
 
+    @Override
     public Date getExpiration(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getExpiration();
     }

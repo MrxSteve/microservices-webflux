@@ -78,4 +78,10 @@ public class UserR2dbcAdapter implements
         return userR2dbcRepository.findByEmail(email)
                 .map(userEntityMapper::toModel);
     }
+
+    @Override
+    public Mono<UserModel> findByUserId(UUID userId) {
+        return userR2dbcRepository.findById(userId)
+                .map(userEntityMapper::toModel);
+    }
 }
