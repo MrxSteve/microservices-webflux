@@ -4,6 +4,7 @@ import com.arka.user_mservice.application.ports.out.RefreshTokenStoragePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -38,4 +39,15 @@ public class RedisRefreshTokenAdapter implements RefreshTokenStoragePort {
         return reactiveRedisTemplate.delete(key).then();
     }
 
+    @Override
+    public Mono<Void> deleteAllByUserId(UUID userId) {
+        String pattern = "refresh_token:" + userId + ":*";
+
+        return reactiveRedisTemplate.scan()
+                .filter(key -> key.startsWith("refresh_token:" + userId.toString() + ":"))
+                .collectList()
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(reactiveRedisTemplate::delete)
+                .then();
+    }
 }

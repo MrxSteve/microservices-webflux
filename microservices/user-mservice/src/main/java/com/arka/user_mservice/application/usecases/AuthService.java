@@ -54,4 +54,14 @@ public class AuthService implements IAuthUseCase {
         UUID userId = tokenProviderPort.getUserIdFromToken(refreshToken);
         return refreshTokenStoragePort.delete(userId, sessionId);
     }
+
+    @Override
+    public Mono<Void> logoutAll(String accessToken) {
+        if (!StringUtils.hasText(accessToken)) {
+            return Mono.error(new IllegalArgumentException("Missing access token"));
+        }
+
+        UUID userId = tokenProviderPort.getUserIdFromToken(accessToken);
+        return refreshTokenStoragePort.deleteAllByUserId(userId);
+    }
 }
