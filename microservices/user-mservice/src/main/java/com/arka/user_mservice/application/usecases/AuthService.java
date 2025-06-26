@@ -8,6 +8,7 @@ import com.arka.user_mservice.application.ports.out.TokenProviderPort;
 import com.arka.user_mservice.domain.exceptions.ResourceNotFoundException;
 import com.arka.user_mservice.domain.models.AuthTokens;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -42,5 +43,15 @@ public class AuthService implements IAuthUseCase {
                     return refreshTokenStoragePort.save(user.getId(), sessionId, refreshToken, expiration)
                             .thenReturn(new AuthTokens(accessToken, refreshToken, sessionId));
                 });
+    }
+
+    @Override
+    public Mono<Void> logout(String refreshToken, String sessionId) {
+        if (!StringUtils.hasText(refreshToken) || !StringUtils.hasText(sessionId)) {
+            return Mono.error(new IllegalArgumentException("Invalid refresh token or session ID"));
+        }
+
+        UUID userId = tokenProviderPort.getUserIdFromToken(refreshToken);
+        return refreshTokenStoragePort.delete(userId, sessionId);
     }
 }

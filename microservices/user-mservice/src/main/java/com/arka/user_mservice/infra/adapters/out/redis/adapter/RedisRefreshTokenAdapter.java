@@ -34,6 +34,8 @@ public class RedisRefreshTokenAdapter implements RefreshTokenStoragePort {
 
     @Override
     public Mono<Void> delete(UUID userId, String sessionId) {
-        return reactiveRedisTemplate.delete(getKey(userId, sessionId)).then();
+        String key = "refresh_token:" + userId + ":" + sessionId;
+        return reactiveRedisTemplate.delete(key).then();
     }
+
 }
