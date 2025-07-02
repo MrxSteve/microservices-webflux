@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -32,6 +33,7 @@ public class UserController {
                 .map(res -> ResponseEntity.status(HttpStatus.CREATED).body(res));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public Mono<ResponseEntity<UserResponse>> findById(@PathVariable UUID id) {
         return iUserUseCases.findById(id)
@@ -40,12 +42,14 @@ public class UserController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public Flux<UserResponse> findAll() {
         return iUserUseCases.findAll()
                 .map(userDtoMapper::toResponse);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
     public Mono<ResponseEntity<UserResponse>> findByUsernameOrEmail(@RequestParam String value) {
         return iUserUseCases.findByUsernameOrEmail(value)
@@ -54,6 +58,7 @@ public class UserController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public Mono<ResponseEntity<UserResponse>> update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         UserModel userToUpdate = userDtoMapper.toModel(request);
@@ -62,12 +67,14 @@ public class UserController {
                 .map(ResponseEntity::ok);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable UUID id) {
         return iUserUseCases.deleteById(id)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/enable")
     public Mono<ResponseEntity<UserResponse>> enable(@PathVariable UUID id) {
         return iUserUseCases.enable(id)
@@ -75,6 +82,7 @@ public class UserController {
                 .map(ResponseEntity::ok);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/disable")
     public Mono<ResponseEntity<UserResponse>> disable(@PathVariable UUID id) {
         return iUserUseCases.disable(id)

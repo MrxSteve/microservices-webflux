@@ -6,13 +6,10 @@ import org.springframework.util.StringUtils;
 
 @Component
 public class JwtUtils {
-
-    private static final String BEARER_PREFIX = "Bearer ";
-
     public String extractTokenFromHeader(HttpHeaders headers) {
         String bearer = headers.getFirst(HttpHeaders.AUTHORIZATION);
-        if (StringUtils.hasText(bearer) && bearer.startsWith(BEARER_PREFIX)) {
-            return bearer.substring(BEARER_PREFIX.length());
+        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+            return bearer.substring("Bearer ".length());
         }
         return null;
     }

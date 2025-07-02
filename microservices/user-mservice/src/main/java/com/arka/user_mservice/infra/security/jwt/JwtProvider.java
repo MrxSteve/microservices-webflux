@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -31,14 +33,30 @@ public class JwtProvider implements TokenProviderPort {
     }
 
     @Override
-    public String generateAccessToken(UUID userId, String username) {
+    public String generateAccessToken(UUID userId, String username, List<String> roles) {
         return Jwts.builder()
                 .setSubject(userId.toString())
                 .claim("username", username)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    @Override
+    public List<String> getRolesFromToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
+        Object rolesClaim = claims.get("roles");
+
+        if (rolesClaim instanceof List<?>) {
+            return ((List<?>) rolesClaim).stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .toList();
+        }
+
+        return List.of();
     }
 
     @Override

@@ -1,15 +1,17 @@
 package com.arka.user_mservice.application.usecases;
 
 import com.arka.user_mservice.application.ports.in.IRefreshTokenUseCase;
-import com.arka.user_mservice.application.ports.out.AuthPersistencePort;
-import com.arka.user_mservice.application.ports.out.RefreshTokenStoragePort;
-import com.arka.user_mservice.application.ports.out.TokenProviderPort;
+import com.arka.user_mservice.application.ports.out.*;
 import com.arka.user_mservice.domain.models.AuthTokens;
+import com.arka.user_mservice.domain.models.RoleModel;
+import com.arka.user_mservice.domain.models.UserModel;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -18,6 +20,8 @@ public class RefreshTokenService implements IRefreshTokenUseCase {
     private final RefreshTokenStoragePort refreshTokenStoragePort;
     private final TokenProviderPort tokenProviderPort;
     private final AuthPersistencePort authPersistencePort;
+    private final UserRolePersistencePort userRolePersistencePort;
+    private final UserProfilePersistencePort userProfilePersistencePort;
 
     @Override
     public Mono<AuthTokens> refreshToken(String refreshToken, String sessionId) {
@@ -39,18 +43,35 @@ public class RefreshTokenService implements IRefreshTokenUseCase {
                     }
                     return authPersistencePort.findByUserId(userId);
                 })
-                .flatMap(user -> {
-                    String newAccessToken = tokenProviderPort.generateAccessToken(user.getId(), user.getUsername());
-                    String newRefreshToken = tokenProviderPort.generateRefreshToken(user.getId(), sessionId);
+                .flatMap(this::enrichUser)
+                .flatMap(enrichedUser -> {
+                    List<String> roles = enrichedUser.getRoles().stream()
+                            .map(RoleModel::getName)
+                            .toList();
+
+                    String newAccessToken = tokenProviderPort.generateAccessToken(enrichedUser.getId(), enrichedUser.getUsername(), roles);
+
+                    String newRefreshToken = tokenProviderPort.generateRefreshToken(enrichedUser.getId(), sessionId);
 
                     Duration expiration = Duration.between(
                             Instant.now(),
                             tokenProviderPort.getExpiration(newRefreshToken).toInstant()
                     );
 
-                    return refreshTokenStoragePort.save(user.getId(), sessionId, newRefreshToken, expiration)
+                    return refreshTokenStoragePort.save(enrichedUser.getId(), sessionId, newRefreshToken, expiration)
                             .thenReturn(new AuthTokens(newAccessToken, newRefreshToken, sessionId));
                 });
+    }
+
+    private Mono<UserModel> enrichUser(UserModel user) {
+        return Mono.zip(
+                userRolePersistencePort.getRolesByUserId(user.getId()).collectList(),
+                userProfilePersistencePort.findByUserId(user.getId()).switchIfEmpty(Mono.justOrEmpty(null))
+        ).map(tuple -> {
+            user.setRoles(new HashSet<>(tuple.getT1()));
+            user.setProfile(tuple.getT2());
+            return user;
+        });
     }
 }
 
