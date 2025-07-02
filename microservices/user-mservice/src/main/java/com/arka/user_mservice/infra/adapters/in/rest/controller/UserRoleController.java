@@ -12,7 +12,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
+
 @PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "User Roles", description = "Operations to assign/remove roles to/from users")
 @RestController
 @RequestMapping("/api/user-roles")
 @RequiredArgsConstructor
@@ -21,20 +28,37 @@ public class UserRoleController {
     private final IUserRoleUseCases iUserRoleUseCases;
     private final RoleDtoMapper roleDtoMapper;
 
+    @Operation(summary = "Assign a role to a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Role assigned to user successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PostMapping("/assign")
-    public Mono<ResponseEntity<Void>> assignRoleToUser(@RequestParam UUID userId, @RequestParam UUID roleId) {
+    public Mono<ResponseEntity<Void>> assignRoleToUser(
+            @Parameter(description = "User ID", required = true) @RequestParam UUID userId,
+            @Parameter(description = "Role ID", required = true) @RequestParam UUID roleId) {
         return iUserRoleUseCases.assignRole(userId, roleId)
                 .thenReturn(ResponseEntity.ok().build());
     }
 
+    @Operation(summary = "Remove a role from a user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Role removed from user successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @DeleteMapping("/remove")
-    public Mono<ResponseEntity<Void>> removeRoleFromUser(@RequestParam UUID userId, @RequestParam UUID roleId) {
+    public Mono<ResponseEntity<Void>> removeRoleFromUser(
+            @Parameter(description = "User ID", required = true) @RequestParam UUID userId,
+            @Parameter(description = "Role ID", required = true) @RequestParam UUID roleId) {
         return iUserRoleUseCases.removeRole(userId, roleId)
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
+    @Operation(summary = "Get all roles assigned to a user")
+    @ApiResponse(responseCode = "200", description = "List of roles for the user")
     @GetMapping("/{userId}/roles")
-    public Flux<RoleResponse> getRolesByUser(@PathVariable UUID userId) {
+    public Flux<RoleResponse> getRolesByUser(
+            @Parameter(description = "User ID", required = true) @PathVariable UUID userId) {
         return iUserRoleUseCases.getRolesByUser(userId)
                 .map(roleDtoMapper::toResponse);
     }

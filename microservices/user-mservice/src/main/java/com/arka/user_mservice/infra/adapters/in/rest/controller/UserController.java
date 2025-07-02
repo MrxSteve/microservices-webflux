@@ -17,6 +17,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "Users", description = "CRUD operations for users")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -25,6 +31,11 @@ public class UserController {
     private final IUserUseCases iUserUseCases;
     private final UserDtoMapper userDtoMapper;
 
+    @Operation(summary = "Register a new user")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid user data")
+    })
     @PostMapping("/register")
     public Mono<ResponseEntity<UserResponse>> register(@Valid @RequestBody UserRequest request) {
         UserModel user = userDtoMapper.toModel(request);
@@ -33,6 +44,11 @@ public class UserController {
                 .map(res -> ResponseEntity.status(HttpStatus.CREATED).body(res));
     }
 
+    @Operation(summary = "Find a user by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public Mono<ResponseEntity<UserResponse>> findById(@PathVariable UUID id) {
@@ -42,6 +58,8 @@ public class UserController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "List all users")
+    @ApiResponse(responseCode = "200", description = "List of users")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public Flux<UserResponse> findAll() {
@@ -49,6 +67,11 @@ public class UserController {
                 .map(userDtoMapper::toResponse);
     }
 
+    @Operation(summary = "Find user by username or email")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User found"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search")
     public Mono<ResponseEntity<UserResponse>> findByUsernameOrEmail(@RequestParam String value) {
@@ -58,6 +81,11 @@ public class UserController {
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Update a user by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User updated successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public Mono<ResponseEntity<UserResponse>> update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
@@ -67,6 +95,11 @@ public class UserController {
                 .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Delete a user by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> delete(@PathVariable UUID id) {
@@ -74,6 +107,8 @@ public class UserController {
                 .thenReturn(ResponseEntity.noContent().build());
     }
 
+    @Operation(summary = "Enable a user by ID")
+    @ApiResponse(responseCode = "200", description = "User enabled")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/enable")
     public Mono<ResponseEntity<UserResponse>> enable(@PathVariable UUID id) {
@@ -82,6 +117,8 @@ public class UserController {
                 .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Disable a user by ID")
+    @ApiResponse(responseCode = "200", description = "User disabled")
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/disable")
     public Mono<ResponseEntity<UserResponse>> disable(@PathVariable UUID id) {
@@ -90,4 +127,5 @@ public class UserController {
                 .map(ResponseEntity::ok);
     }
 }
+
 

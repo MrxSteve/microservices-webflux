@@ -17,6 +17,12 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "My Account", description = "Endpoints for authenticated user to manage their account and profile")
 @RestController
 @RequestMapping("/api/me")
 @RequiredArgsConstructor
@@ -30,6 +36,8 @@ public class MeController {
         return UUID.fromString(authentication.getName());
     }
 
+    @Operation(summary = "Get current authenticated user info")
+    @ApiResponse(responseCode = "200", description = "User data retrieved successfully")
     @GetMapping
     public Mono<ResponseEntity<UserResponse>> getMe(Mono<Authentication> auth) {
         return auth
@@ -39,11 +47,15 @@ public class MeController {
                 .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Update current authenticated user data")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User data updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PutMapping
     public Mono<ResponseEntity<UserResponse>> updateMe(
             Mono<Authentication> auth,
-            @RequestBody @Valid UpdateUserRequest request
-    ) {
+            @RequestBody @Valid UpdateUserRequest request) {
         return auth
                 .map(this::extractUserId)
                 .flatMap(userId -> iAuthenticatedUserUseCase.updateMyUser(userId, userDtoMapper.toModel(request)))
@@ -51,11 +63,15 @@ public class MeController {
                 .map(ResponseEntity::ok);
     }
 
+    @Operation(summary = "Update current authenticated user's profile")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User profile updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
     @PutMapping("/profile")
     public Mono<ResponseEntity<UserProfileResponse>> updateProfile(
             Mono<Authentication> auth,
-            @RequestBody @Valid UpdateUserProfileRequest request
-    ) {
+            @RequestBody @Valid UpdateUserProfileRequest request) {
         return auth
                 .map(this::extractUserId)
                 .flatMap(userId -> iAuthenticatedUserUseCase.getMyUser(userId)
@@ -68,4 +84,5 @@ public class MeController {
                 .map(ResponseEntity::ok);
     }
 }
+
 
